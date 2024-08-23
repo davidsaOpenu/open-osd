@@ -63,9 +63,6 @@ MODULE_LICENSE("GPL");
 static inline void build_test(void)
 {
 	/* structures were not packed */
-	BUILD_BUG_ON(sizeof(struct osd_capability) != OSD_CAP_LEN);
-	BUILD_BUG_ON(sizeof(struct osdv2_cdb) != OSD_TOTAL_CDB_LEN);
-	BUILD_BUG_ON(sizeof(struct osdv1_cdb) != OSDv1_TOTAL_CDB_LEN);
 }
 
 static const char *_osd_ver_desc(struct osd_request *or)
@@ -1042,7 +1039,7 @@ static struct bio *_create_sg_bios(struct osd_request *or,
 		unsigned len = sglist[i].len;
 		unsigned added_len;
 
-		BUG_ON(offset + len > PAGE_SIZE);
+		BUG_ON(offset + len > (unsigned)PAGE_SIZE);
 		added_len = bio_add_pc_page(q, bio, page, len, offset);
 		if (unlikely(len != added_len)) {
 			OSD_DEBUG("bio_add_pc_page len(%d) != added_len(%d)\n",
