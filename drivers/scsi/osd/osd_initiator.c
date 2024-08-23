@@ -1042,7 +1042,7 @@ static struct bio *_create_sg_bios(struct osd_request *or,
 		unsigned len = sglist[i].len;
 		unsigned added_len;
 
-		BUG_ON(offset + len > PAGE_SIZE);
+		BUG_ON(offset + len > (unsigned)PAGE_SIZE);
 		added_len = bio_add_pc_page(q, bio, page, len, offset);
 		if (unlikely(len != added_len)) {
 			OSD_DEBUG("bio_add_pc_page len(%d) != added_len(%d)\n",
