@@ -10,6 +10,7 @@
 #define __KinU_UNALIGNED_H__
 
 #include <asm/byteorder.h>
+#include <asm/posix_types.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 
