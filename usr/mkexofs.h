@@ -53,6 +53,7 @@ int mkexofs_format(struct osd_dev *od, uint64_t format_size_meg,
 
 struct mkexofs_cluster {
 	osd_id pid;
+	int nvme_fd; // [openu] store the nvme file descriptor
 	unsigned raid_no;
 	unsigned mirrors;
 	unsigned stripe_unit;
