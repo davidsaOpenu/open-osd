@@ -47,6 +47,7 @@
 
 #include <open-osd/libosd.h>
 #include "mkexofs.h"
+#include "nvme.h"
 
 static void usage(void)
 {
@@ -140,6 +141,16 @@ struct _one_dev {
 
 static int _format(struct _one_dev *dev)
 {
+	/**
+	 * [openu] _format calls mkexofs_format, which calls osd_req_format and this function
+	 * formats the OSD logical unit device to a specified size. In our context,
+	 * there is no need to do so. The function osd_format_osd in osc-osd/osd-target
+	 * (the OSD emulation) just destroy the db and start over again (ignores the
+	 * size in the request). So for now, there is no need for it.
+	 * */
+	int nvme_fd = open_dev(dev->path);
+	return nvme_fd > 0;
+
 	struct osd_dev *od;
 	int ret;
 
@@ -215,6 +226,13 @@ static int check_supported_params(struct mkexofs_cluster *c_header)
 
 static int _mkfs(char **pathes, struct mkexofs_cluster *c_header)
 {
+	/**
+	 * [openu] This function loops over all devices (/dev/osdX - we want to replace
+	 * it with /dev/nvme0nX). For each device it calls
+	 * mkfs_one(struct osd_dev *od, struct mkexofs_cluster *mc).
+	 * We might want to change the usage od osd_dev with nvme_dev or something like
+	 * this. Currently, there is no nvme_dev structure. Might be implemented later.
+	 */
 	struct mkexofs_cluster *cluster;
 	unsigned num_devs = c_header->num_ods;
 	unsigned i;
@@ -233,19 +251,28 @@ static int _mkfs(char **pathes, struct mkexofs_cluster *c_header)
 	for (i = 0; i < num_devs; i++) {
 		struct osd_dev *od;
 
-		ret = osd_open(pathes[i], &od);
-		if (ret)
+		// [openu] open nvme device
+		int nvme_fd = open_dev(pathes[i]);
+		if (nvme_fd < 0) {
+			ret = 1;
 			goto failed;
+		}
+		// [openu] commented-out, we do not want to try opening the device.
+		// ret = osd_open(pathes[i], &od);
+		// if (ret)
+		// 	goto failed;
 
 		cluster->ods[i] = od;
+		cluster->nvme_fd = nvme_fd;
 		cluster->num_ods++;
 	}
 
 	ret = exofs_mkfs(cluster);
 
 failed:
-	while (cluster->num_ods--)
-		osd_close(cluster->ods[cluster->num_ods]);
+	// [openu] commented-out, no need to free the devices if we didn't call osd_open.
+	// while (cluster->num_ods--)
+	// 	osd_close(cluster->ods[cluster->num_ods]);
 
 	if (ret) {
 		/* exofs_mkfs is a kernel API it returns negative errors */
