@@ -64,7 +64,7 @@ osd_test_clean:
 $(DEPEND): $(OT_COMMON_OBJ:.o=.c) $(OT_OBJ:.o=.c)
 
 # =============== mkexofs ======================================================
-mkfs_OBJ=mkexofs_main.o mkexofs.o
+mkfs_OBJ=mkexofs_main.o mkexofs.o nvme.o nvme_ioctl.o
 
 # add for mkexofs debugging
 # CFLAGS += -DCONFIG_MKEXOFS_DEBUG
