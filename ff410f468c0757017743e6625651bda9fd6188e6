@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "391dac33_33f49983",
+        "filename": "drivers/scsi/osd/osd_initiator.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-08-30T05:12:47Z",
+      "side": 0,
+      "message": "if structures were not packed during the compilation it might not work properly",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 63
+      },
+      "revId": "ff410f468c0757017743e6625651bda9fd6188e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
