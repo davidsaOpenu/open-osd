@@ -22,6 +22,30 @@
       },
       "revId": "ff410f468c0757017743e6625651bda9fd6188e6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "74a89963_1249fbc9",
+        "filename": "drivers/scsi/osd/osd_initiator.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2024-09-11T11:27:09Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "391dac33_33f49983",
+      "range": {
+        "startLine": 65,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 63
+      },
+      "revId": "ff410f468c0757017743e6625651bda9fd6188e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
