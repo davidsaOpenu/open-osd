@@ -26,6 +26,7 @@
  */
 
 #include "mkexofs.h"
+#include "nvme.h"
 #include <scsi/osd_sense.h>
 
 #ifdef __KERNEL__
@@ -183,6 +184,7 @@ static int create_partition(struct osd_dev *od, osd_id p_id)
 	return ret ? -EEXIST : 0;
 }
 
+// OBSOLETE
 static int create(struct osd_dev *od, const struct osd_obj_id *obj)
 {
 	struct osd_request *or = osd_start_request(od, GFP_KERNEL);
@@ -231,26 +233,12 @@ static int create_write_device_table(struct osd_dev *od,
 				     const struct osd_obj_id *obj,
 				     const struct mkexofs_cluster *cluster)
 {
-	struct osd_request *or;
-	uint8_t cred_a[OSD_CAP_LEN];
 	struct exofs_device_table *edt;
 	struct exofs_dt_device_info *dt_dev;
 	unsigned numdevs = cluster->num_ods;
 	unsigned size = sizeof(*edt) + numdevs * sizeof(*dt_dev);
 	unsigned i;
 	int ret;
-
-	// [openu] do not create object using the OSD directly. instead, use nvme.
-
-	// ret = create(od, obj);
-	// if (unlikely(ret))
-	// 	return ret;
-
-	// _make_credential(cred_a, obj);
-
-	// or = osd_start_request(od, GFP_KERNEL);
-	// if (unlikely(!or))
-	// 	return -ENOMEM;
 
 	edt = kzalloc(size, GFP_KERNEL);
 	if (unlikely(!edt)) {
@@ -274,10 +262,6 @@ static int create_write_device_table(struct osd_dev *od,
 
 	for (i = 0; i < numdevs; i++) {
 		// [openu] currently, let's put some hard-coded information about the OSD unit.
-
-		// const struct osd_dev_info *odi =
-		// 	osduld_device_info(cluster->ods[i]);
-
 		dt_dev = &edt->dt_dev_table[i];
 		const char hard_sid[] = "\xf1\x81\x00\x0eOSC     OSDEMU\x00\x00";
         uint32_t slen = sizeof(hard_sid) - 1;  /* = 20 */
@@ -293,24 +277,11 @@ static int create_write_device_table(struct osd_dev *od,
         dt_dev->systemid_len = cpu_to_le32(slen);
         memcpy(dt_dev->systemid, hard_sid, slen);
 
-		// dt_dev->systemid_len = cpu_to_le32(odi->systemid_len);
-		// memcpy(dt_dev->systemid, odi->systemid, odi->systemid_len);
-
 		/* FIXME support long names*/
 		dt_dev->long_name_offset = 0;
 
-		// if (unlikely(odi->osdname_len + 1 >= sizeof(dt_dev->osdname))) {
-		// 	MKFS_ERR("osdname to long length=%u max=%zu\n",
-		// 		 odi->osdname_len + 1,
-		// 		 sizeof(dt_dev->osdname));
-		// 	ret = -EINVAL;
-		// 	goto out;
-		// }
 
-		/*NOTE: We know lib_osd null-terminates the osdname */
-		// dt_dev->osdname_len = cpu_to_le32(odi->osdname_len);
-
-		// [openu] usigng some hard-coded osd name
+		// [openu] using some hard-coded osd name
 		const char *name = "my_osd";
         uint32_t len = strlen(name);           /* e.g. 6 */
 
@@ -319,16 +290,12 @@ static int create_write_device_table(struct osd_dev *od,
 		dt_dev->osdname[len] = '\0';
 	}
 
-	// [openu] create new object with device table
+	// [openu] create new object with device table via nvme
 	ret = nvme_obj_write(cluster->nvme_fd, obj->id, edt, size);
 	kfree(edt);
 	return ret;
 
-	osd_req_write_kern(or, obj, 0, edt, size);
-	ret = kick_it(or, cred_a, "write device table");
-
 out:
-	osd_end_request(or);
 	kfree(edt);
 	return ret;
 }
@@ -336,17 +303,8 @@ out:
 static int write_super(struct osd_dev *od, const struct osd_obj_id *obj,
 		       const struct mkexofs_cluster *cluster)
 {
-	// [openu] do not send OSD request directly, instead, use nvme.
-
-	// struct osd_request *or = osd_start_request(od, GFP_KERNEL);
-	uint8_t cred_a[OSD_CAP_LEN];
 	struct exofs_fscb data;
 	int ret;
-
-	// if (unlikely(!or))
-	// 	return -ENOMEM;
-
-	// _make_credential(cred_a, obj);
 
 	memset(&data, 0, sizeof(data));
 	data.s_nextid = cpu_to_le64(4);
@@ -357,19 +315,11 @@ static int write_super(struct osd_dev *od, const struct osd_obj_id *obj,
 	data.s_dev_table_count = cluster->num_ods;
 
 	return nvme_obj_write(cluster->nvme_fd, obj->id, &data, sizeof(data));
-
-	// osd_req_write_kern(or, obj, 0, &data, sizeof(data));
-	// ret = kick_it(or, cred_a, "write super");
-	// osd_end_request(or);
-
-	return ret;
 }
 
 static int write_rootdir(struct osd_dev *od, const struct osd_obj_id *obj,
 	const struct mkexofs_cluster *cluster)
 {
-	struct osd_request *or;
-	uint8_t cred_a[OSD_CAP_LEN];
 	struct exofs_dir_entry *dir;
 	uint64_t off = 0;
 	unsigned char *buf = NULL;
@@ -403,24 +353,11 @@ static int write_rootdir(struct osd_dev *od, const struct osd_obj_id *obj,
 
 	// [openu] do not send OSD request directly, instead, use nvme.
 	return nvme_obj_write(cluster->nvme_fd, obj->id, buf, EXOFS_BLKSIZE);
-
-	or = osd_start_request(od, GFP_KERNEL);
-	if (unlikely(!or))
-		return -ENOMEM;
-
-	_make_credential(cred_a, obj);
-	osd_req_write_kern(or, obj, off, buf, EXOFS_BLKSIZE);
-	ret = kick_it(or, cred_a, "write rootdir");
-	osd_end_request(or);
-
-	return ret;
 }
 
-static int set_inode(struct osd_dev *od, const struct osd_obj_id *obj,
+static int set_inode(const struct mkexofs_cluster *cluster, const struct osd_obj_id *obj,
 		     uint16_t i_size, uint16_t mode)
 {
-	struct osd_request *or;
-	uint8_t cred_a[OSD_CAP_LEN];
 	struct exofs_fcb inode;
 	struct osd_attr attr;
 	uint32_t i_generation;
@@ -433,6 +370,8 @@ static int set_inode(struct osd_dev *od, const struct osd_obj_id *obj,
 	inode.i_ctime = inode.i_atime = inode.i_mtime =
 				       (signed)cpu_to_le32(CURRENT_TIME.tv_sec);
 	inode.i_size = cpu_to_le64(i_size);
+    
+    // Whats this for?
 /*
 	inode.i_size = cpu_to_le64(EXOFS_BLKSIZE);
 	if (obj->id != EXOFS_ROOT_ID)
@@ -441,21 +380,12 @@ static int set_inode(struct osd_dev *od, const struct osd_obj_id *obj,
 	get_random_bytes(&i_generation, sizeof(i_generation));
 	inode.i_generation = cpu_to_le32(i_generation);
 
-	or = osd_start_request(od, GFP_KERNEL);
-	if (unlikely(!or))
-		return -ENOMEM;
+    // TODO: figure out if it should be implemented in the nvme api
+	// attr = g_attr_inode_data;
+	// attr.val_ptr = &inode;
+	// osd_req_add_set_attr_list(or, &attr, 1);
 
-	_make_credential(cred_a, obj);
-	osd_req_set_attributes(or, obj);
-
-	attr = g_attr_inode_data;
-	attr.val_ptr = &inode;
-	osd_req_add_set_attr_list(or, &attr, 1);
-
-	ret = kick_it(or, cred_a, "set inode");
-	osd_end_request(or);
-
-	return ret;
+    return nvme_attribute_write(cluster->nvme_fd, obj->id, &inode, inode.i_size);
 }
 
 /*
@@ -484,8 +414,7 @@ static int mkfs_one(struct osd_dev *od, struct mkexofs_cluster *mc)
 
 	/* Create object with known ID for superblock info */
 	MKFS_INFO("	creating superblock...");
-	// [openu] TODO: to be implemented later. writing using nvme ioctl calls.
-	// err = create(od, &obj_super);
+
 	err = nvme_obj_create(mc->nvme_fd, obj_super.id);
 	if (err)
 		goto out;
@@ -493,8 +422,7 @@ static int mkfs_one(struct osd_dev *od, struct mkexofs_cluster *mc)
 
 	/* Create root directory object */
 	MKFS_INFO("	creating root directory...");
-	// [openu] TODO: to be implemented later. writing using nvme ioctl calls.
-	// err = create(od, &obj_root);
+
 	err = nvme_obj_create(mc->nvme_fd, obj_root.id);
 	if (err)
 		goto out;
@@ -522,8 +450,9 @@ static int mkfs_one(struct osd_dev *od, struct mkexofs_cluster *mc)
 
 	/* Set root partition inode attribute */
 	MKFS_INFO("	writing root inode...");
+    
 	// [openu] TODO: to be implemented later. writing using nvme ioctl calls.
-	// err = set_inode(od, &obj_root, EXOFS_BLKSIZE, 0040000 | (0777 & ~022));
+	err = set_inode(mc, &obj_root, EXOFS_BLKSIZE, 0040000 | (0777 & ~022));
 	if (err)
 		goto out;
 	MKFS_PRNT(" OK\n");
