@@ -16,17 +16,21 @@
 #define _NVME_H
 
 #include <linux/types.h>
+#include <linux/slab.h>
 
 #include <stdint.h>
 #include <stddef.h>
 
 int open_dev(const char *dev);
 
-int nvme_obj_read(int nvme_fd, uint64_t key, void **buffer, uint32_t *length);
+int nvme_read_data(int nvme_fd, uint64_t key, void **buffer, uint32_t length, bool is_attrib);
+int nvme_write_data(int nvme_fd, uint64_t key, const void *buffer, uint32_t length, bool is_attrib);
 
+int nvme_obj_read(int nvme_fd, uint64_t key, void **buffer, uint32_t length);
 int nvme_obj_write(int nvme_fd, uint64_t key, const void *buffer, uint32_t length);
 
-int nvme_obj_create(int nvme_fd, uint64_t key);
+int nvme_attribute_read(int nvme_fd, uint64_t key, void **buffer, uint32_t length);
+int nvme_attribute_write(int nvme_fd, uint64_t key, const void *buffer, uint32_t length);
 
 /* NQN names in commands fields specified one size */
 #define NVMF_NQN_FIELD_LEN	256
