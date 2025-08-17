@@ -137,15 +137,24 @@ int nvme_io(int fd, __u8 opcode, __u64 slba, __u16 nblocks, __u16 control,
 	return ioctl(fd, NVME_IOCTL_SUBMIT_IO, &io);
 }
 
-int nvme_obj_io(int fd, void* io, __u32 *data_size, void **data)
+int nvme_obj_io(int fd, void* io, __u32 *data_size, void **data, bool is_attrib)
 {
 	int err;
 	struct nvme_user_obj_io* ptr = (struct nvme_user_obj_io*)io;
-	if (data)
-		ptr->addr = (__u64)(uintptr_t)* data;
+	if (data) {
+        if(is_attrib == false) {
+            // Since this isn't a write/read to attributes we start read/write at (ptr->addr + PAGE_SIZE)
+            ptr->offset = getpagesize();
+        }
+        ptr->addr = (__u64)(uintptr_t)* data;
+    }
 	ptr->length = *data_size;
-	err = ioctl(fd, NVME_IOCTL_SUBMIT_OBJ_IO, ptr);
+
+    printf("\nnvme_io opcode(1 write, 2 read): %d, at offset: %d, size: %d \n", ptr->opcode, ptr->offset, ptr->length);
+	
+    err = ioctl(fd, NVME_IOCTL_SUBMIT_OBJ_IO, ptr);
 	*data_size = ptr->length;
+    
 	return err;
 }
 
