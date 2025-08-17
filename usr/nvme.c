@@ -1,10 +1,16 @@
+#include <errno.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+
 
 #include "nvme.h"
 #include "nvme_ioctl.h"
+
+#define NVME_ATTR_KEY_HIGH (1ULL << 31)
 
 int open_dev(const char *dev)
 {
@@ -30,56 +36,74 @@ int open_dev(const char *dev)
 	return -1;
 }
 
-int nvme_obj_read(int nvme_fd, uint64_t key, void **buffer, uint32_t *length) {
+int nvme_read_data(int nvme_fd, uint64_t key, void **buffer, uint32_t length, bool is_attrib) 
+{
+	uint64_t key_high = 0;
+
 	if (!buffer || !length) {
 		printf("invalid null ptr.\n");
 		return -1;
 	}
 
-	struct nvme_user_obj_io io = {0};
-	io.opcode = nvme_kv_retrieve;
-	io.offset = 0;
-	io.length = 1;
-	io.key_low = key;
-	io.key_high = 0;
-	io.key_len = 16;
+	if (is_attrib == true) {
+		key_high = NVME_ATTR_KEY_HIGH;
+	}
 
-	if (posix_memalign(buffer, getpagesize(), 1024)) {
+	struct nvme_user_obj_io io = {
+        .opcode = nvme_kv_retrieve,
+        .offset = 0,
+        .length = length,
+        .key_low = key,
+        .key_high = key_high,
+        .key_len = NVME_OBJ_ID_MAXLEN
+    };
+
+	if (posix_memalign(buffer, getpagesize(), length)) {
 		printf("failed to allocate memory nvme read request.\n");
 		return -1;
 	}
 
-	int ret = nvme_obj_io(nvme_fd, &io, length, buffer);
+	int ret = nvme_obj_io(nvme_fd, &io, &length, buffer);
 	if (ret) {
 		printf("failed to execute nvme io for reading.\n");
-		free(buffer);
+		free(*buffer);
+		*buffer = NULL;
 		return -1;
 	}
 
 	return 0;
 }
 
-int nvme_obj_write(int nvme_fd, uint64_t key, const void *buffer, uint32_t length) {
+int nvme_write_data(int nvme_fd, uint64_t key, const void *buffer, uint32_t length, bool is_attrib) 
+{
 	if (length && !buffer) {
 		printf("invalid null ptr.\n");
 		return -1;
 	}
 
-	struct nvme_user_obj_io io = {0};
-	io.opcode = nvme_kv_store;
-	io.offset = 0;
-	io.length = length;
-	io.key_low = key;
-	io.key_high = 0;
-	io.key_len = 16;
+	if (is_attrib == true) {
+		key |= NVME_ATTR_KEY_HIGH;
+	}
+
+	struct nvme_user_obj_io io = {
+        .opcode = nvme_kv_store,
+        .offset = 0,
+        .length = length,
+        .key_low = key,
+        .key_high = 0,
+        .key_len = NVME_OBJ_ID_MAXLEN
+    };
+
+	printf("\t nvme_write_data: key=%llx, key_high=%llx, length=%d, is_attrib=%d\n", key, key_high, length, is_attrib);
 
 	void *data = NULL;
 	if (length && posix_memalign(&data, getpagesize(), length)) {
-		printf("failed to allocate memory nvme read request.\n");
+		printf("failed to allocate memory nvme write request.\n");
 		return -1;
 	}
 
-	if (length)	memcpy(data, buffer, length);
+	if (length)
+        memcpy(data, buffer, length);
 
 	int ret = nvme_obj_io(nvme_fd, &io, &length, &data);
 	free(data);
@@ -91,6 +115,23 @@ int nvme_obj_write(int nvme_fd, uint64_t key, const void *buffer, uint32_t lengt
 	return 0;
 }
 
-int nvme_obj_create(int nvme_fd, uint64_t key) {
-	return nvme_obj_write(nvme_fd, key, NULL, 0);
+int nvme_obj_read(int nvme_fd, uint64_t key, void **buffer, uint32_t length)
+{
+    return nvme_read_data(nvme_fd, key, buffer, length, false);
+}
+
+int nvme_obj_write(int nvme_fd, uint64_t key, const void *buffer, uint32_t length)
+{
+    return nvme_write_data(nvme_fd, key, buffer, length, false);
+}
+
+int nvme_attribute_read(int nvme_fd, uint64_t key, void **buffer, uint32_t length)
+{
+    return nvme_read_data(nvme_fd, key, buffer, length, true);
+}
+
+int nvme_attribute_write(int nvme_fd, uint64_t key, const void *buffer, uint32_t length)
+{
+	printf("\t nvme_attribute_write: key=%llx, length=%d\n", key, length);
+    return nvme_write_data(nvme_fd, key, buffer, length, true);
 }
