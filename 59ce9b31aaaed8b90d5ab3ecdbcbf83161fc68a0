@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "903159ef_becceaeb",
+        "filename": "usr/mkexofs.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2025-09-08T10:21:27Z",
+      "side": 1,
+      "message": "unintentionally commented out?",
+      "range": {
+        "startLine": 408,
+        "startChar": 0,
+        "endLine": 428,
+        "endChar": 14
+      },
+      "revId": "59ce9b31aaaed8b90d5ab3ecdbcbf83161fc68a0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    }
+  ]
+}
