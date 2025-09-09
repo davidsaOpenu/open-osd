@@ -46,6 +46,30 @@
       },
       "revId": "59ce9b31aaaed8b90d5ab3ecdbcbf83161fc68a0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f72492e_8864d875",
+        "filename": "usr/mkexofs.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1007990
+      },
+      "writtenOn": "2025-09-09T07:53:11Z",
+      "side": 1,
+      "message": "In that case, why remove specific lines? Let\u0027s leave them alone. The method should not be called in its entirety, isn\u0027t it?",
+      "parentUuid": "b5f44970_72a64d38",
+      "range": {
+        "startLine": 408,
+        "startChar": 0,
+        "endLine": 428,
+        "endChar": 14
+      },
+      "revId": "59ce9b31aaaed8b90d5ab3ecdbcbf83161fc68a0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
