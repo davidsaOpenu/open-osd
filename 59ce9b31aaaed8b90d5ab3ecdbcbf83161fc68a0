@@ -70,6 +70,30 @@
       },
       "revId": "59ce9b31aaaed8b90d5ab3ecdbcbf83161fc68a0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f4b3129_c3be15b2",
+        "filename": "usr/mkexofs.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1038807
+      },
+      "writtenOn": "2025-09-09T10:28:27Z",
+      "side": 1,
+      "message": "the method was removed in this commit.It was redundant, it simply called nvme_write with zeroes which served no purpose.",
+      "parentUuid": "0f72492e_8864d875",
+      "range": {
+        "startLine": 408,
+        "startChar": 0,
+        "endLine": 428,
+        "endChar": 14
+      },
+      "revId": "59ce9b31aaaed8b90d5ab3ecdbcbf83161fc68a0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735"
     }
   ]
 }
