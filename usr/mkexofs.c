@@ -338,21 +338,21 @@ static int write_rootdir(struct osd_dev *od, const struct osd_obj_id *obj,
 	/* create entry for '.' */
 	dir->name[0] = '.';
 	dir->name_len = 1 | filetype;
-	dir->inode_no = cpu_to_le64(EXOFS_ROOT_ID - EXOFS_OBJ_OFF);
+	dir->inode_no = cpu_to_le64(EXOFS_ROOT_ID);
 	dir->rec_len = cpu_to_le16(EXOFS_DIR_REC_LEN(1));
-	rec_len = EXOFS_BLKSIZE - EXOFS_DIR_REC_LEN(1) -1;
+	rec_len = EXOFS_BLKSIZE - EXOFS_DIR_REC_LEN(1) - 4;
 
 	/* create entry for '..' */
 	dir = (struct exofs_dir_entry *) (buf + le16_to_cpu(dir->rec_len));
 	dir->name[0] = '.';
 	dir->name[1] = '.';
 	dir->name_len = 2 | filetype;
-	dir->inode_no = cpu_to_le64(EXOFS_ROOT_ID - EXOFS_OBJ_OFF);
+	dir->inode_no = cpu_to_le64(EXOFS_ROOT_ID);
 	dir->rec_len = cpu_to_le16(rec_len);
 	done = EXOFS_DIR_REC_LEN(1) + le16_to_cpu(dir->rec_len);
 
 	// [openu] do not send OSD request directly, instead, use nvme.
-	return nvme_obj_write(cluster->nvme_fd, obj->id, buf, EXOFS_BLKSIZE -1);
+	return nvme_obj_write(cluster->nvme_fd, obj->id, buf, EXOFS_BLKSIZE - 4);
 }
 
 static int set_inode(const struct mkexofs_cluster *cluster, const struct osd_obj_id *obj,
